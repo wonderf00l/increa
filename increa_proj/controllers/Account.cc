@@ -7,8 +7,8 @@ void Account::signup(const HttpRequestPtr &req, std::function<void(const HttpRes
 
     auto request_body = req->getJsonObject();
 
-    if (!request->body->isMember("login") || !request_body->isMember("email") ||
-        !request->body->isMember("password") || !request_body->isMember("repeated password")) {
+    if (!(request_body->isMember("login")) || !(request_body->isMember("email")) ||
+        !(request_body->isMember("password")) || !(request_body->isMember("repeated password"))) {
         json["status"] = "error";
         json["message"] = "missing login/email/password";
 
@@ -19,7 +19,7 @@ void Account::signup(const HttpRequestPtr &req, std::function<void(const HttpRes
         return;
     }
 
-    auto login = request_body->get("login").asString();
+    auto login = request_body->get("login", "default").asString();
 
     json["status"] = HttpStatusCode::k200OK;
     // login = request_body["login"];
@@ -43,7 +43,7 @@ void Account::login(const HttpRequestPtr &req, std::function<void(const HttpResp
     callback(resp);
 }
 
-void Account::get_info(const HttpRequestPtr &req, std::function<void(const HttpRequestPtr &)> &&callback,
+void Account::get_info(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback,
                        std::string user_id, const std::string &token) {
     LOG_DEBUG << "User " << user_id << " get his information";
 
@@ -59,7 +59,7 @@ void Account::get_info(const HttpRequestPtr &req, std::function<void(const HttpR
     callback(resp);
 }
 
-void Account::resume(const HttpRequestPtr &req, std::function<void(const HttpRequestPtr &)> &&callback,
+void Account::resume(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback,
                      std::string user_id) {
     LOG_DEBUG << "User " << user_id << " get his resume";
 
@@ -71,18 +71,17 @@ void Account::resume(const HttpRequestPtr &req, std::function<void(const HttpReq
     callback(resp);
 }
 
-void Account::groups(const HttpRequestPtr &req, std::function<void(const HttpRequestPtr &)> &&callback,
-                std::string user_id) {
-
-    LOG_DEBUG << "User " << user_id << " get his groups";                
+void Account::groups(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback,
+                     std::string user_id) {
+    LOG_DEBUG << "User " << user_id << " get his groups";
     Json::Value json;
 
-    if (req->getMethod() == HttpMethod::Get)
+    if (req->getMethod() == HttpMethod::Get) {
         json["status"] = HttpStatusCode::k200OK;
-        json["groups_list"] = {"rockLovers", "pythonCoders", "flowersGrowers"};
+        json["groups_list_description"] = "group's list page";
         auto resp = HttpResponse::newHttpJsonResponse(json);
         callback(resp);
-    else if (req->getMethod() == HttpMethod::Post) {
+    } else if (req->getMethod() == HttpMethod::Post) {
         auto request_body = req->getJsonObject();
         // go to db
         // group_name = request_body->get("group_name").asString()
@@ -93,6 +92,5 @@ void Account::groups(const HttpRequestPtr &req, std::function<void(const HttpReq
     }
 }
 
-//acc/settings
-//acc/resume/group
-
+// acc/settings
+// acc/resume/group
