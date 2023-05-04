@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.8)
 project(increa_proj CXX)
 
 include(CheckIncludeFileCXX)
@@ -20,6 +20,14 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_executable(${PROJECT_NAME} main.cc)
+
+# option(BUILD_TESTS "build tests")
+# if(BUILD_TESTS)
+#   enable_testing()
+#   find_package(GTest REQUIRED)
+# endif()
+
+# add_subdirectory(gtest)
 
 # ##############################################################################
 # If you include the drogon source code locally in your project, use this method

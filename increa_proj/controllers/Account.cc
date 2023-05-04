@@ -7,6 +7,17 @@ void Account::signup(const HttpRequestPtr &req, std::function<void(const HttpRes
 
     auto request_body = req->getJsonObject();
 
+    if (request_body == nullptr) {
+        json["status"] = "error";
+        json["message"] = "body is required";
+
+        auto response = HttpResponse::newHttpJsonResponse(json);
+        response->setStatusCode(HttpStatusCode::k400BadRequest);
+
+        callback(response);
+        return;
+    }
+
     if (!(request_body->isMember("login")) || !(request_body->isMember("email")) ||
         !(request_body->isMember("password")) || !(request_body->isMember("repeated password"))) {
         json["status"] = "error";
@@ -18,6 +29,17 @@ void Account::signup(const HttpRequestPtr &req, std::function<void(const HttpRes
         callback(response);
         return;
     }
+
+    if ((*request_body)["password"] != (*request_body)["repeated password"]) {
+        json["status"] = "error";
+        json["message"] = "wrong data";
+
+        auto response = HttpResponse::newHttpJsonResponse(json);
+        response->setStatusCode(HttpStatusCode::k400BadRequest);
+
+        callback(response);
+        return;
+    }  // check regex also
 
     auto login = request_body->get("login", "default").asString();
 
@@ -37,13 +59,13 @@ void Account::login(const HttpRequestPtr &req, std::function<void(const HttpResp
     //...
     Json::Value json;
     json["status"] = HttpStatusCode::k200OK;
-    json["result"] = "ok";
+    json["message"] = "got verification";
     json["token"] = drogon::utils::getUuid();
     auto resp = HttpResponse::newHttpJsonResponse(json);
     callback(resp);
 }
 
-void Account::get_info(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback,
+void Account::settings(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback,
                        std::string user_id, const std::string &token) {
     LOG_DEBUG << "User " << user_id << " get his information";
 
@@ -85,7 +107,7 @@ void Account::groups(const HttpRequestPtr &req, std::function<void(const HttpRes
         auto request_body = req->getJsonObject();
         // go to db
         // group_name = request_body->get("group_name").asString()
-
+        json["message"] = "edited group list";
         json["status"] = HttpStatusCode::k200OK;
         auto resp = HttpResponse::newHttpJsonResponse(json);
         callback(resp);
