@@ -10,7 +10,7 @@ using namespace drogon;
 
 void empty_body_filter::doFilter(const HttpRequestPtr &req, FilterCallback &&fcb,
                                  FilterChainCallback &&fccb) {
-    if (auto req_body = req->getJsonObject(); req_body) {
+    if (auto req_body = req->getJsonObject(); req->getMethod() == HttpMethod::Post && req_body) {
         fccb();
         return;
     }
