@@ -1,0 +1,63 @@
+1)конфигурирование, анализ CMakeLists.txt -- 2)сборка билда -- 3) сборка тестов(опционально) -- 4)формирование пакета(инсталляция)
+
+выбор генератора cmake (vs, makefile ...)
+
+cd build && cmake -G "gen_name" -<FLAG>=FLAG_VAL <CMakeLists.txt path> -- начинается парсинг файла проекта, происходит генерация проекта
+
+после генерации появляются файлы сборки проекта 
+
+cmake --build <dir_with_bin path> --config Release --target SomeTarget -- теперь делаем билд проекта
+
+Release/Debug/e.t.c - папка конфигурации -- в ней - exe, файлы библиотек и тд
+
+
+
+add_executable(projName src1 src2 ... [EXCLUDE_FROM_ALL]) - exclude from "all" target
+
+add_library(tgName [STATIC | SHARED | MODULE] [EXCLUDE_FROM_ALL] src1 src2...)
+
+DEFAULT: STATIC
+
+
+cmake -DBUILD_SHARED_LIBS=YES .. - для генерации файла SHARED библиотеки(линкуется в runtime)
+
+
+
+---------------------------------------------
+
+...
+add_executable(exe main.cpp)
+add_library(mylibA libA.cpp)
+add_library(mylibB libB.cpp)
+
+target_link_libraries(mylibA PRIVATE mylibB) -- mylibB используется только в имплементации mylibA
+
+target_link_libraries(exe PRIVATE mylibA) -- exe ничего не знает о mylibB(то есть не должно быть включения хедеров библиотеки mylibB)
+чтобы знало, используем PUBLIC
+
+target_link_libraries
+
+при отсутствии изменений в исходниках rebuild'a не происходит
+
++ при выполнении таргета билдятся только те либы, которые прилинкованы к нему
+
+set(varName value... [PARENT_SCOPE]) - variable declaration
+
+set(varName value CACHE type "DOCSTR" [FORCE])
+
+option(varNameBOOL helpString TRUE) - cache bool var declaration
+
+set(SOURCES test.cpp lib1.cpp lib2.cpp)
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall")
+
+if(USE_STATIC)
+
+else()
+
+endif()
+
+
+cmake -D BUILD_TESTS=ON .. - в билде появится папка test с makefile и др содержимым
+
+cmake --build . -- аналог make

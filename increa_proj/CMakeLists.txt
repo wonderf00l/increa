@@ -20,9 +20,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 
-find_package(PkgConfig)
-pkg_check_modules(LIBCONFIG REQUIRED IMPORTED_TARGET libconfig++)
-
 add_executable(${PROJECT_NAME} main.cc)
 
 
