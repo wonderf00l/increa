@@ -3,6 +3,7 @@
 #include <trantor/utils/Date.h>
 
 #include <unordered_map>
+#include <vector>
 
 void Account::signup(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback) {
     Json::Value json;
@@ -35,6 +36,7 @@ void Account::signup(const HttpRequestPtr &req, std::function<void(const HttpRes
 
     auto response = HttpResponse::newHttpJsonResponse(json);
     response->setStatusCode(HttpStatusCode::k200OK);
+    response->setContentTypeCode(ContentType::CT_APPLICATION_JSON);
     callback(response);
 }
 
@@ -58,12 +60,16 @@ void Account::login(const HttpRequestPtr &req, std::function<void(const HttpResp
         drogon::utils::base64Encode(reinterpret_cast<const unsigned char *>(login.c_str()), login.size());
     auto resp = HttpResponse::newHttpJsonResponse(json);
     resp->setStatusCode(HttpStatusCode::k200OK);
+    resp->setContentTypeCode(ContentType::CT_APPLICATION_JSON);
     LOG_DEBUG << "User " << login << " logged in successfully";
     callback(resp);
 }
 
 void Account::logout(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback) {
-    LOG_DEBUG << "User is trying to log out";
+    
+    std::string login = drogon::utils::base64Decode(req->getHeader("Authorization"));
+    
+    LOG_DEBUG << "User "<< login << "is trying to log out";
 
     bool is_logged_in = 0;
 
@@ -74,6 +80,7 @@ void Account::logout(const HttpRequestPtr &req, std::function<void(const HttpRes
     json["message"] = "log out: success";
     auto resp = HttpResponse::newHttpJsonResponse(json);
     resp->setStatusCode(HttpStatusCode::k200OK);
+    resp->setContentTypeCode(ContentType::CT_APPLICATION_JSON);
     LOG_DEBUG << "User logged out successfully";
     callback(resp);
 }
@@ -86,7 +93,9 @@ void Account::settings(const HttpRequestPtr &req, std::function<void(const HttpR
 
     Json::Value json;
     auto request_body = req->getJsonObject();
-    std::string login, first_name, last_name, creative_fields, creation_date, birthday, gender;
+    std::string login = drogon::utils::base64Decode(req->getHeader("Authorization"));
+    // now we can define what user settnigs we whould get from db
+    std::string first_name, last_name, creative_fields, creation_date, birthday, gender;
 
     if (req->getMethod() == HttpMethod::Get) {
         LOG_DEBUG << "User " << login << " is getting his account settings";
@@ -121,10 +130,150 @@ void Account::settings(const HttpRequestPtr &req, std::function<void(const HttpR
         json["message"] = "settings fields have been edited";
         auto resp = HttpResponse::newHttpJsonResponse(json);
         resp->setStatusCode(HttpStatusCode::k200OK);
+        resp->setContentTypeCode(ContentType::CT_APPLICATION_JSON);
         callback(resp);
     }
-    // groups and posts in separate endpoint
 }
+
+void Account::posts(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback) {
+
+    std::string login = drogon::utils::base64Decode(req->getHeader("Authorization"));
+    auto request_body = req->getJsonObject();
+    Json::Value json;
+
+    if (req->getMethod() == HttpMethod::Get) {
+
+        LOG_DEBUG << "User " << login << "is trying to get his posts";
+
+        std::vector<std::string> posts; // from db
+        json["posts"] = Json::arrayValue;
+
+        for (const std::string& post : posts) {
+            json["posts"].append(post);
+        }
+
+        json["status"] = "ok";
+        
+        auto resp = HttpResponse::newHttpJsonResponse(json);
+        resp->setStatusCode(HttpStatusCode::k200OK);
+        resp->setContentTypeCode(ContentType::CT_APPLICATION_JSON);
+        callback(resp);
+
+    }
+    else if (req->getMethod() == HttpMethod::Post) {
+        LOG_DEBUG << "User " << login << " is trying to set some posts";
+
+        Json::Value posts = (*request_body)["posts"];
+        std::vector<std::string> posts_list(posts.size());
+
+        for (unsigned int i = 0; i != posts.size(); ++i) {
+            posts_list[i] = posts[i].asString();
+        }
+       
+        for (const std::string& post : posts_list) {
+            LOG_DEBUG << post << " ";
+        }
+
+        json["status"] = "ok";
+        json["message"] = "posts have been set successfully";
+
+        auto resp = HttpResponse::newHttpJsonResponse(json);
+        resp->setStatusCode(HttpStatusCode::k200OK);
+        resp->setContentTypeCode(ContentType::CT_APPLICATION_JSON);
+        callback(resp);
+
+    }
+    else if (req->getMethod() == HttpMethod::Delete) {
+        LOG_DEBUG << "User " << login << " is trying to delete some posts";
+        
+        Json::Value posts_to_del = (*request_body)["posts"];
+        std::vector<std::string> posts_list(posts_to_del.size());
+        for (unsigned int i = 0; i != posts_to_del.size(); ++i) {
+            posts_list[i] = posts_to_del[i].asString();
+        }
+
+        // go to db and delete
+
+        json["status"] = "ok";
+        json["message"] = "posts have been deleted successfully";
+
+        auto resp = HttpResponse::newHttpJsonResponse(json);
+        resp->setStatusCode(HttpStatusCode::k200OK);
+        resp->setContentTypeCode(ContentType::CT_APPLICATION_JSON);
+        callback(resp);
+    }
+
+}
+
+void Account::groups(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback) {
+
+    std::string login = drogon::utils::base64Decode(req->getHeader("Authorization"));
+    auto request_body = req->getJsonObject();
+    Json::Value json;
+
+    if (req->getMethod() == HttpMethod::Get) {
+
+        LOG_DEBUG << "User " << login << "is trying to get his groups";
+
+        std::vector<std::string> groups; // from db
+        json["groups"] = Json::arrayValue;
+
+        for (const std::string& group : groups) {
+            json["groups"].append(group);
+        }
+
+        json["status"] = "ok";
+        
+        auto resp = HttpResponse::newHttpJsonResponse(json);
+        resp->setStatusCode(HttpStatusCode::k200OK);
+        resp->setContentTypeCode(ContentType::CT_APPLICATION_JSON);
+        callback(resp);
+
+    }
+    else if (req->getMethod() == HttpMethod::Post) {
+        LOG_DEBUG << "User " << login << " is trying to set some groups";
+
+        Json::Value groups = (*request_body)["groups"];
+        std::vector<std::string> groups_list(groups.size());
+
+        for (unsigned int i = 0; i != groups.size(); ++i) {
+            groups_list[i] = groups[i].asString();
+        }
+       
+        for (const std::string& group : groups_list) {
+            LOG_DEBUG << group << " ";
+        }
+
+        json["status"] = "ok";
+        json["message"] = "groups have been set successfully";
+
+        auto resp = HttpResponse::newHttpJsonResponse(json);
+        resp->setStatusCode(HttpStatusCode::k200OK);
+        resp->setContentTypeCode(ContentType::CT_APPLICATION_JSON);
+        callback(resp);
+
+    }
+    else if (req->getMethod() == HttpMethod::Delete) {
+        LOG_DEBUG << "User " << login << " is trying to delete some groups";
+        
+        Json::Value groups_to_del = (*request_body)["groups"];
+        std::vector<std::string> groups_list(groups_to_del.size());
+        for (unsigned int i = 0; i != groups_to_del.size(); ++i) {
+            groups_list[i] = groups_to_del[i].asString();
+        }
+
+        // go to db and delete
+
+        json["status"] = "ok";
+        json["message"] = "groups have been deleted successfully";
+
+        auto resp = HttpResponse::newHttpJsonResponse(json);
+        resp->setStatusCode(HttpStatusCode::k200OK);
+        resp->setContentTypeCode(ContentType::CT_APPLICATION_JSON);
+        callback(resp);
+    }
+}
+
 
 void Account::resume(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback,
                      std::string user_id) {
@@ -136,27 +285,6 @@ void Account::resume(const HttpRequestPtr &req, std::function<void(const HttpRes
     json["content"] = "resume content";
     auto resp = HttpResponse::newHttpJsonResponse(json);
     callback(resp);
-}
-
-void Account::groups(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback,
-                     std::string user_id) {
-    LOG_DEBUG << "User " << user_id << " get his groups";
-    Json::Value json;
-
-    if (req->getMethod() == HttpMethod::Get) {
-        json["status"] = HttpStatusCode::k200OK;
-        json["groups_list_description"] = "group's list page";
-        auto resp = HttpResponse::newHttpJsonResponse(json);
-        callback(resp);
-    } else if (req->getMethod() == HttpMethod::Post) {
-        auto request_body = req->getJsonObject();
-        // go to db
-        // group_name = request_body->get("group_name").asString()
-        json["message"] = "edited group list";
-        json["status"] = HttpStatusCode::k200OK;
-        auto resp = HttpResponse::newHttpJsonResponse(json);
-        callback(resp);
-    }
 }
 
 // acc/settings
