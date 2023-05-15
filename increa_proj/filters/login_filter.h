@@ -1,6 +1,6 @@
 /**
  *
- *  signup_filter.h
+ *  login_filter.h
  *
  */
 
@@ -9,8 +9,8 @@
 #include <drogon/HttpFilter.h>
 using namespace drogon;
 
-class signup_filter : public HttpFilter<signup_filter> {
+class login_filter : public HttpFilter<login_filter> {
    public:
-    signup_filter() {}
+    login_filter() {}
     void doFilter(const HttpRequestPtr &req, FilterCallback &&fcb, FilterChainCallback &&fccb) override;
 };

@@ -8,12 +8,9 @@
 
 using namespace drogon;
 
-void signup_filter::doFilter(const HttpRequestPtr &req,
-                         FilterCallback &&fcb,
-                         FilterChainCallback &&fccb)
-{
-    
+void signup_filter::doFilter(const HttpRequestPtr &req, FilterCallback &&fcb, FilterChainCallback &&fccb) {
     auto request_body = req->getJsonObject();
+    Json::Value json;
 
     if (!(request_body->isMember("login")) || !(request_body->isMember("email")) ||
         !(request_body->isMember("password")) || !(request_body->isMember("repeated password"))) {
@@ -23,7 +20,7 @@ void signup_filter::doFilter(const HttpRequestPtr &req,
         auto response = HttpResponse::newHttpJsonResponse(json);
         response->setStatusCode(HttpStatusCode::k400BadRequest);
 
-        fcb(res);
+        fcb(response);
         return;
     }
 
@@ -34,9 +31,10 @@ void signup_filter::doFilter(const HttpRequestPtr &req,
         auto response = HttpResponse::newHttpJsonResponse(json);
         response->setStatusCode(HttpStatusCode::k400BadRequest);
 
-        fcb(res);
+        fcb(response);
+
         return;
     }
-    
+    // should also check validity of the email, login
     fccb();
 }

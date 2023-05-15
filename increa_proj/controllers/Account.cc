@@ -2,15 +2,28 @@
 
 #include <trantor/utils/Date.h>
 
+#include <unordered_map>
+
 void Account::signup(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback) {
     Json::Value json;
 
     LOG_DEBUG << "User is trying to register";
 
+    // id ?
     std::string login = req->getParameter("login");
     std::string password = req->getParameter("password");
     std::string email = req->getParameter("email");
-    std::string creation_date = trantor::Date::toDbString();
+    trantor::Date date = trantor::Date::date();
+    std::string creation_date = date.toDbString();
+    bool is_logged_in = 0;
+
+    std::unordered_map<std::string, std::string> db_field;
+    db_field["login"] = login;
+    db_field["password"] = password;
+    db_field["email"] = email;
+    db_field["creation_date"] = creation_date;
+    db_field["logged_in"] = is_logged_in;
+    // serialize
     // GO TO DB and register
 
     json["status"] = "ok";
@@ -29,17 +42,6 @@ void Account::login(const HttpRequestPtr &req, std::function<void(const HttpResp
     // Authentication algorithm, read database, verify, identify, etc...
     //...
 
-    if (!(request_body->isMember("login")) || !(request_body->isMember("email"))) {
-        json["status"] = "error";
-        json["message"] = "missing login/email/password";
-
-        auto response = HttpResponse::newHttpJsonResponse(json);
-        response->setStatusCode(HttpStatusCode::k400BadRequest);
-
-        callback(response);
-        return;
-    }
-
     std::string login = req->getParameter("login");
     std::string password = req->getParameter("password");
 
@@ -48,60 +50,80 @@ void Account::login(const HttpRequestPtr &req, std::function<void(const HttpResp
 
     // GO TO DB AND CHECK LOGIN&PASSW
 
+    bool is_logged_in = 1;
+
     json["status"] = "ok";
     json["message"] = "got verification";
-    json["token"] = drogon::utils::base64Encode(login, login.size());
+    json["token"] =
+        drogon::utils::base64Encode(reinterpret_cast<const unsigned char *>(login.c_str()), login.size());
     auto resp = HttpResponse::newHttpJsonResponse(json);
     resp->setStatusCode(HttpStatusCode::k200OK);
     LOG_DEBUG << "User " << login << " logged in successfully";
     callback(resp);
 }
 
+void Account::logout(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback) {
+    LOG_DEBUG << "User is trying to log out";
+
+    bool is_logged_in = 0;
+
+    // WRITE TO DB
+
+    Json::Value json;
+    json["status"] = "ok";
+    json["message"] = "log out: success";
+    auto resp = HttpResponse::newHttpJsonResponse(json);
+    resp->setStatusCode(HttpStatusCode::k200OK);
+    LOG_DEBUG << "User logged out successfully";
+    callback(resp);
+}
+
 void Account::settings(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback) {
-    LOG_DEBUG << "User " << user_id << " get his information";
     // Verify the validity of the token, etc.
     // Read the database or cache to get user information
 
     // also post/put/patch to edit profile settings
 
     Json::Value json;
-    std::string first_name, last_name, creative_fields, creation_date, birthday, gender;
-
+    auto request_body = req->getJsonObject();
+    std::string login, first_name, last_name, creative_fields, creation_date, birthday, gender;
 
     if (req->getMethod() == HttpMethod::Get) {
-        std::string login;
+        LOG_DEBUG << "User " << login << " is getting his account settings";
+
         // first_name = ... , etc
 
-        //json["first_name"] = first_name
+        // json["first_name"] = first_name
         json["status"] = "ok";
         auto resp = HttpResponse::newHttpJsonResponse(json);
         resp->setStatusCode(HttpStatusCode::k200OK);
         callback(resp);
-    }
-    else if (req->getMethod() == HttpMethod::Post) {
+    } else if (req->getMethod() == HttpMethod::Post) {
+        LOG_DEBUG << "User " << login << " is trying to define account settings";
+
         //...
-        //check if cluster is in db, birth date format
+        // check if cluster is in db, birth date format
 
         json["status"] = "ok";
         auto resp = HttpResponse::newHttpJsonResponse(json);
         resp->setStatusCode(HttpStatusCode::k200OK);
         callback(resp);
+    } else if (req->getMethod() == HttpMethod::Patch) {
+        LOG_DEBUG << "User " << login << " is trying to edit account settings";
+
+        if (request_body->isMember("login")) {
+            std::string new_login = req->getParameter("login");
+            // go to db and change login
+            //  ...
+        }
+
+        json["status"] = "ok";
+        json["message"] = "settings fields have been edited";
+        auto resp = HttpResponse::newHttpJsonResponse(json);
+        resp->setStatusCode(HttpStatusCode::k200OK);
+        callback(resp);
     }
-
-
-
     // groups and posts in separate endpoint
-
-    json["status"] = "ok";
-    json["login"] = login;
-    json["date of birth"] = birth_date;
-    json["gender"] = gender;
-    json["cluster"] = cluster;
-    json["activity"] = activity;
-
-    auto resp = HttpResponse::newHttpJsonResponse(json);
-    resp->setStatusCode(HttpStatusCode::k200OK);
-    callback(resp);
 }
 
 void Account::resume(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback,
